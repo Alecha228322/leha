@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кнопка с картинкой и музыкой</title>
+    <style>
+        /* ГЛОБАЛЬНЫЕ СТИЛИ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100vh;
+            background: #0d0d0d;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #0d0d0d;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Кнопка */
+        .btn {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000);
+            border: none;
+            cursor: pointer;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            user-select: none;
+            position: relative;
+            transition: transform 0.1s ease, box-shadow 0.15s ease;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6),
+                        0 0 60px rgba(255, 0, 0, 0.4),
+                        0 0 100px rgba(255, 0, 0, 0.2),
+                        inset 0 -8px 15px rgba(0, 0, 0, 0.4),
+                        inset 0 8px 15px rgba(255, 255, 255, 0.3);
+            z-index: 10;
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        .btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 40px rgba(255, 0, 0, 0.8),
+                        0 0 80px rgba(255, 0, 0, 0.5),
+                        0 0 120px rgba(255, 0, 0, 0.3),
+                        inset 0 -8px 15px rgba(0, 0, 0, 0.4),
+                        inset 0 8px 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.85);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5),
+                        0 0 40px rgba(255, 0, 0, 0.3),
+                        0 0 60px rgba(255, 0, 0, 0.1),
+                        inset 0 4px 10px rgba(0, 0, 0, 0.6),
+                        inset 0 -4px 10px rgba(255, 255, 255, 0.1);
+            transition: transform 0.05s ease, box-shadow 0.05s ease;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 0 30px rgba(255, 0, 0, 0.6), 0 0 60px rgba(255, 0, 0, 0.4), 0 0 100px rgba(255, 0, 0, 0.2), inset 0 -8px 15px rgba(0, 0, 0, 0.4), inset 0 8px 15px rgba(255, 255, 255, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 50px rgba(255, 0, 0, 0.8), 0 0 80px rgba(255, 0, 0, 0.5), 0 0 120px rgba(255, 0, 0, 0.3), inset 0 -8px 15px rgba(0, 0, 0, 0.4), inset 0 8px 15px rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        /* Картинка */
+        .moving-image {
+            position: fixed;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 0 40px rgba(255, 0, 0, 0.9), 0 0 80px rgba(255, 0, 0, 0.6), 0 0 120px rgba(255, 0, 0, 0.3);
+            z-index: 9999;
+            pointer-events: none;
+            display: none;
+        }
+
+        @media (max-width: 500px) {
+            .btn {
+                width: 150px;
+                height: 150px;
+                font-size: 18px;
+            }
+            .moving-image {
+                width: 180px;
+                height: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <button class="btn" id="mainButton">Нажми</button>
+        <img id="movingImage" class="moving-image" src="/cat.png" alt="Бегающая картинка">
+    </div>
+
+    <script>
+        // === ИНИЦИАЛИЗАЦИЯ ===
+        const button = document.getElementById('mainButton');
+        const image = document.getElementById('movingImage');
+
+        const imageSize = 250; // Размер картинки
+
+        // Позиция
+        let x = window.innerWidth / 2 - imageSize / 2;
+        let y = window.innerHeight / 2 - imageSize / 2;
+
+        // Скорость
+        let dx = 4;
+        let dy = 4;
+
+        let animationId = null;
+        let audio = null;
+        let isClicked = false;
+
+        // === ФУНКЦИЯ ДВИЖЕНИЯ ===
+        function moveImage() {
+            if (!isClicked) return;
+
+            const maxX = window.innerWidth - imageSize;
+            const maxY = window.innerHeight - imageSize;
+
+            // Отскок от стен
+            if (x <= 0 || x >= maxX) dx = -dx;
+            if (y <= 0 || y >= maxY) dy = -dy;
+
+            // Обновляем позицию
+            x += dx;
+            y += dy;
+
+            // Применяем стиль
+            image.style.left = x + 'px';
+            image.style.top = y + 'px';
+
+            // Продолжаем анимацию
+            animationId = requestAnimationFrame(moveImage);
+        }
+
+        // === ЗАПУСК ===
+        function startAnimation() {
+            if (isClicked) return;
+
+            isClicked = true;
+
+            // Прячем кнопку
+            button.style.display = 'none';
+
+            // Показываем картинку
+            image.style.display = 'block';
+            image.style.left = x + 'px';
+            image.style.top = y + 'px';
+
+            // Включаем музыку
+            if (audio) {
+                audio.play().catch(err => console.warn('Музыка не заиграла:', err));
+            }
+
+            // Запускаем движение
+            moveImage();
+        }
+
+        // === ОБРАБОТЧИК РАЗМЕРА ОКНА ===
+        function handleResize() {
+            const maxX = window.innerWidth - imageSize;
+            const maxY = window.innerHeight - imageSize;
+
+            if (x > maxX) x = maxX;
+            if (y > maxY) y = maxY;
+            if (x < 0) x = 0;
+            if (y < 0) y = 0;
+
+            if (isClicked) {
+                image.style.left = x + 'px';
+                image.style.top = y + 'px';
+            }
+        }
+
+        // === МОНТИРОВАНИЕ ===
+        window.addEventListener('load', function() {
+            // Создаём аудио
+            audio = new Audio('/music.mp3');
+            audio.loop = true;
+            audio.volume = 0.7;
+
+            // Вешаем обработчики
+            button.addEventListener('click', startAnimation);
+            window.addEventListener('resize', handleResize);
+        });
+
+        // === РАЗМОНТИРОВАНИЕ ===
+        window.addEventListener('beforeunload', function() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            if (audio) {
+                audio.pause();
+                audio = null;
+            }
+            window.removeEventListener('resize', handleResize);
+        });
+    </script>
+
+</body>
+</html>
